@@ -1,0 +1,10 @@
+cData=mem
+Error in line 215: Statement is not in a procedure.
+a=0
+Error in line 216: Statement is not in a procedure.
+cdata=SUBSTR(cdata,AT("COL_INSTANSI_SIMP",cdata))
+Error in line 218: Statement is not in a procedure.
+MESSAGEBOX(cdata)
+Error in line 219: Statement is not in a procedure.
+thisform.Release 
+Error in line 221: Statement is not in a procedure.

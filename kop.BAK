@@ -1,0 +1,33 @@
+Compiling d:\_myproject\kop1\progs\a.prg
+.VPOS = 12083,333
+Error in line 38: Syntax error.
+.WIDTH = 104,167
+Error in line 41: Syntax error.
+.HEIGHT = 104,167
+Error in line 59: Syntax error.
+.HEIGHT = 104,167
+Error in line 69: Syntax error.
+.VPOS = 2083,333 + LNROW * 10000
+Error in line 79: Syntax error.
+.HEIGHT = 104,167
+Error in line 81: Syntax error.
+.VPOS = 2083,333 + LNROW * 10000 - 1700
+Error in line 90: Syntax error.
+.HEIGHT = 104,167
+Error in line 92: Syntax error.
+.VPOS = 2083,333 + LNROW * 10000
+Error in line 100: Syntax error.
+.WIDTH = 104,167
+Error in line 103: Syntax error.
+.VPOS = 2083,333 + LNROW * 10000
+Error in line 110: Syntax error.
+.WIDTH = 104,167
+Error in line 113: Syntax error.
+
+Compiling d:\_myproject\kop1\progs\pros2.prg
+ENDPROC*
+Error in line 134: Command contains unrecognized phrase/keyword.
+
+Program d:\_myproject\kop1\progs\pros1.prg has the following errors:
+    Unknown ACCESS - Undefined
+

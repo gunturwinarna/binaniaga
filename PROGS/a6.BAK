@@ -1,0 +1,233 @@
+*lcFileName=thisform.text1.Value 
+lcFileName="d:\data\kpri0417"
+IF EMPTY(lcFileName)
+   RETURN 
+ENDIF 
+CLEAR
+gnFileHandle = FOPEN(lcFileName)
+nSize =  FSEEK(gnFileHandle, 0, 2)  && posisi akhir untuk mencari besar data
+mByte=50000
+mSesion=1
+mLoop=CEILING(nSize/mByte)   && = roundup
+FSEEK( gnFileHandle, 0,0)    && go top
+cData = FREAD( gnFileHandle, mByte)   && session 1
+
+*----------------- buat databased jika ada --------------------------
+cdata=SUBSTR(cdata,AT("create database",cdata))
+cdata1=LEFT(cdata,AT(";",cdata))
+csql=cdata1
+lcek=SQLEXEC(oODBC,csql)
+*--------------------------------------------------------------------
+
+a=1
+DO WHILE .t.
+   a=a+1
+   p1=AT("DROP TABLE",cData)
+   p2=AT("CREATE TABLE",cData)
+   p3=AT("insert  into",cData)
+   p4=AT("CREATE TRIGGER",cdata)
+   p5=AT("DROP FUNCTION",cdata)
+   p1=IIF(p1=0,999999999999,p1)
+   p2=IIF(p2=0,999999999999,p2)
+   p3=IIF(p3=0,999999999999,p3)
+   p4=IIF(p4=0,999999999999,p4)
+   p5=IIF(p5=0,999999999999,p5)
+
+   DO CASE 
+      CASE p1<>0 AND p1<p2 AND p1<p3 AND p1<p4 AND p1<p5
+           cdata=SUBSTR(cdata,AT("DROP TABLE",cdata))
+           *---->> cek apakah terpotong
+           IF AT(";",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata1=LEFT(cdata,AT(";",cdata))
+           hrf1=AT("DROP",cdata)+21
+           hrf2=AT(";",cdata)
+          * MESSAGEBOX("DROP .................."+SUBSTR(cdata,hrf1,hrf2-hrf1))
+           mTabel=UPPER(CHRTRAN(SUBSTR(cdata,hrf1,hrf2-hrf1),'`',''))
+           *MESSAGEBOX(mtabel)
+           *thisform.label3.Caption=mtabel
+           csql=cdata1
+           lcek=SQLEXEC(oODBC,csql)
+           IF lcek<1 
+              messagebox("drop table "+CHR(13)+csql)
+           ENDIF 
+           *---->> cek apakah terpotong
+           IF AT(";",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata=SUBSTR(cdata,AT(";",cdata)) 
+           
+      CASE p2<p1 AND p2<p3 AND p2<>0 AND p2<p4 AND p2<p5
+           cdata=SUBSTR(cdata,AT("CREATE TABLE",cdata))
+           *---->> cek apakah terpotong
+           IF AT(";",cdata)=0 OR LEN(cdata)<200
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata1=LEFT(cdata,AT(";",cdata))
+           hrf1=AT("CREATE",cdata)+21
+           hrf2=AT("(",cdata)
+           *MESSAGEBOX("CREATE .................."+SUBSTR(cdata,hrf1,hrf2-hrf1))
+           csql=cdata1
+           lcek=SQLEXEC(oODBC,csql)
+           IF lcek<1
+                  MESSAGEBOX("create table "+CHR(13)+csql)
+                  RETURN 
+           ENDIF 
+           *---->> cek apakah terpotong
+           IF AT(";",cdata)=0 OR LEN(cdata)<200
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata=SUBSTR(cdata,AT(";",cdata))   
+      CASE p3<p1 AND p3<p2 AND p3<>0 AND p3<p4 AND p3<p5
+           
+           *--------------------- insert data ----------------------
+           cdata=SUBSTR(cdata,AT("insert  into",cdata))
+           *---------- ambil Header dulu
+           mhead=left(cdata,ATC(") value",cdata)+8)
+           *-------------------------------------
+           hrf2=AT("(",cdata)-1
+           mTabel=UPPER(CHRTRAN(SUBSTR(cdata,13,hrf2-13),'`',''))
+           ?mtabel
+           cdata=SUBSTR(cdata,AT("values (",cdata)+6)
+           IF AT(")",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           *thisform.label3.Caption=mtabel
+           
+           IF AT("SET_PRINT",mtabel)=0   && <<----------------------- sementara
+              
+           *--- loop sampai ketemu 
+           akhir=.f.
+           ml=1
+           do WHILE !akhir
+              IF AT(";",cdata)>0
+                 akhir=.t.
+              ENDIF 
+              *----------- kalau dalam 1 halaman
+              IF akhir
+                 cdata3=LEFT(cdata,AT(";",cdata))
+                 cdata=SUBSTR(cdata,AT(";",cdata))
+              ELSE 
+                 batas="),("
+                 panjang=RATC(batas,cdata)
+                 cdata3=LEFT(cdata,panjang)
+                 cdata=SUBSTR(cdata,panjang+2)
+              ENDIF    
+              csql=mhead+' '+cdata3
+              *-------------- eksekusi mysql
+              lcek=SQLEXEC(oODBC,csql)
+              IF lcek<1
+                 MESSAGEBOX("ke :"+STR(ml)+"Gagal Insert Data")
+                 MESSAGEBOX(csql)
+                 RETURN 
+              ENDIF
+              ml=ml+1
+              IF akhir 
+                 EXIT
+              ELSE 
+                 mSesion=mSesion+1
+                 cdata=cdata+bacafile(gnFileHandle,mByte)   
+              ENDIF  
+          ENDDO     
+          ENDIF 
+           
+      CASE p4<p1 AND p4<p2 AND p4<>0 AND p4<p3 AND p4<p5     
+           *------------ create trigger
+           cdata=SUBSTR(cdata,AT("CREATE TRIGGER",cdata))
+           *---->> cek apakah terpotong
+           IF AT("END",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata1=LEFT(cdata,AT("END",cdata)+2)+";"
+           
+           hrf1=AT("CREATE",cdata)+21
+           hrf2=AT("(",cdata)
+           *MESSAGEBOX("CREATE .................."+SUBSTR(cdata,hrf1,hrf2-hrf1))
+           
+           csql=cdata1
+           lcek=SQLEXEC(oODBC,csql)
+           IF lcek<1
+                  MESSAGEBOX("create trigger "+CHR(13)+csql)
+                  RETURN 
+           ENDIF 
+           IF AT("END",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata=SUBSTR(cdata,AT("END",cdata)) 
+           cdata=SUBSTR(cdata,AT(";",cdata))        
+      CASE p5<p1 AND p5<p2 AND p5<>0 AND p5<p3 AND p5<p4     
+           *------------ create function
+           cdata=SUBSTR(cdata,AT("DROP FUNCTION",cdata)+14)
+           cdata=SUBSTR(cdata,AT("FUNCTION",cdata))
+           IF AT("DELIMITER",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata1=LEFT(cdata,AT("DELIMITER",cdata))
+           cdata1=LEFT(cdata1,RAT("END",cdata1)+2)+";"
+           
+           hrf1=AT("CREATE",cdata)+21
+           hrf2=AT("(",cdata)
+           *MESSAGEBOX("CREATE .................."+SUBSTR(cdata,hrf1,hrf2-hrf1))
+           
+           csql="CREATE "+cdata1
+           lcek=SQLEXEC(oODBC,csql)
+           IF lcek<1
+                  MESSAGEBOX("---------- create function -----------"+CHR(13)+csql)
+                 * RETURN 
+           ENDIF 
+           IF AT("DELIMITER",cdata)=0
+              mSesion=mSesion+1
+              cdata=cdata+bacafile(gnFileHandle,mByte)
+           ENDIF 
+           cdata=SUBSTR(cdata,AT("DELIMITER",cdata)) 
+           cdata=SUBSTR(cdata,AT(";",cdata))             
+      OTHERWISE 
+           IF mSesion>=mLoop
+              EXIT
+           ENDIF 
+           msesion=msesion+1
+           cdata=cdata+bacafile(gnFileHandle,mByte)   
+   ENDCASE 
+   IF LEN(cdata)<200
+      msesion=msesion+1
+      cdata=cdata+bacafile(gnFileHandle,mByte) 
+   ENDIF        
+   
+ENDDO 
+MESSAGEBOX("RESTORE DATA, SELESAI",64,"")
+FCLOSE( gnFileHandle )
+
+RETURN 
+ 
+FUNCTION bacafile(gnFileHandle, mByte)
+    FSEEK(gnFileHandle, 0,1 )  && Posisi Pointer saat ini
+    mData = FREAD( gnFileHandle, mByte)
+ RETURN mData 
+ENDFUNC 
+cData=mem
+a=0
+
+cdata=SUBSTR(cdata,AT("COL_INSTANSI_SIMP",cdata))
+MESSAGEBOX(cdata)
+
+thisform.Release 
+
+FUNCTION bacabigtext(mke,mByte)
+   mPoint=mke*mByte
+   mPoint=IIF(mPoint=0,1,mPoint)
+   *FSEEK(gnFileHandle,mPoint)
+   FSEEK(gnFileHandle,mPoint)
+   mData = FREAD( gnFileHandle, mByte)
+   SET MEMOWIDTH TO 8000
+       
+RETURN mData
+ENDFUNC 
